@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json.schemastore.org/nest-cli",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "src",
+  "compilerOptions": {
+    "deleteOutDir": true,
+    "webpack": true,
+    "plugins": [
+      "@nestjs/swagger"
+    ]
+  },
+  "projects": {
+    "modules/photo": {
+      "type": "library",
+      "root": "libs/modules/photo",
+      "entryFile": "index",
+      "sourceRoot": "libs/modules/photo/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/modules/photo/tsconfig.lib.json"
+      }
+    }
+  }
+}
