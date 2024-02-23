@@ -1,9 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, ClassSerializerInterceptor, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, ClassSerializerInterceptor, UploadedFiles } from '@nestjs/common';
 import { PhotoService } from './photo.service';
 import { CreatePhotoDto } from './dto/create-photo.dto';
 import { UpdatePhotoDto } from './dto/update-photo.dto';
-import { Photo } from './entities/photo.entity';
+import { Photo, PhotoType } from './entities/photo.entity';
 import { ApiPaginatedResponse } from 'src/PaginatedDto';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import * as fsp from 'fs/promises';
+import path, { join } from 'path';
+import { mkdirs } from 'src/tools/file';
+
 
 @Controller('photo')
 export class PhotoController {
@@ -39,9 +44,29 @@ export class PhotoController {
   async remove(@Param('id') id: string) {
     await this.photoService.remove(+id);
   }
-  
+
   @Post("upload")
-  async uploadFile(@UploadedFile() file: Express.Multer.File) {
-    console.log(file)
+  @UseInterceptors(AnyFilesInterceptor())
+  async uploadFile(@UploadedFiles() files: Array<any>, @Body() body: { lastModifieds: string[] }) {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      console.log(file);
+      const timestamp = parseInt(body.lastModifieds[i]);
+      const date = new Date(timestamp);
+
+      const baseUrl = join(__dirname, "../../public/upload");
+      const folderName = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+      const fileName = `${Date.now()}-${file.originalname}`;
+
+      mkdirs(join(baseUrl, folderName));
+      await fsp.writeFile(join(baseUrl, folderName, fileName), file.buffer);
+
+
+      this.create({
+        date: timestamp,
+        src: fileName,
+        type: PhotoType.Image
+      })
+    }
   }
 }

@@ -32,7 +32,7 @@ export class Photo  {
     type: PhotoType;
 
     @Prop({
-        type: mongoose.Schema.Types.Number,
+        type: mongoose.Schema.Types.BigInt,
         required: true
     })
     date: number;
