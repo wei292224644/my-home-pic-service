@@ -15,7 +15,7 @@ export type PhotoDocument = HydratedDocument<Photo>;
     }
 )
 
-export class Photo  {
+export class Photo {
     @Prop()
     id: number;
 
@@ -32,7 +32,8 @@ export class Photo  {
     type: PhotoType;
 
     @Prop({
-        type: mongoose.Schema.Types.BigInt,
+        type: mongoose.Schema.Types.Number,
+        index: true,
         required: true
     })
     date: number;

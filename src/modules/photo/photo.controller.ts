@@ -6,7 +6,7 @@ import { Photo, PhotoType } from './entities/photo.entity';
 import { ApiPaginatedResponse } from 'src/PaginatedDto';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import * as fsp from 'fs/promises';
-import path, { join } from 'path';
+import { join } from 'path';
 import { mkdirs } from 'src/tools/file';
 
 
@@ -50,7 +50,6 @@ export class PhotoController {
   async uploadFile(@UploadedFiles() files: Array<any>, @Body() body: { lastModifieds: string[] }) {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      console.log(file);
       const timestamp = parseInt(body.lastModifieds[i]);
       const date = new Date(timestamp);
 
@@ -62,10 +61,14 @@ export class PhotoController {
       await fsp.writeFile(join(baseUrl, folderName, fileName), file.buffer);
 
 
-      this.create({
-        date: timestamp,
+      const mimetype = file.mimetype;
+
+      const isVideo = mimetype.startsWith("video/");
+
+      await this.create({
+        date: timestamp + i,
         src: fileName,
-        type: PhotoType.Image
+        type: isVideo ? PhotoType.Video : PhotoType.Image
       })
     }
   }
