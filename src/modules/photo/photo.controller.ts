@@ -1,13 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, ClassSerializerInterceptor, UploadedFiles } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, ClassSerializerInterceptor, UploadedFiles, HttpStatus } from '@nestjs/common';
 import { PhotoService } from './photo.service';
 import { CreatePhotoDto } from './dto/create-photo.dto';
 import { UpdatePhotoDto } from './dto/update-photo.dto';
-import { Photo, PhotoType } from './entities/photo.entity';
-import { ApiPaginatedResponse } from 'src/PaginatedDto';
+import { Photo } from './entities/photo.entity';
+import { ApiPaginatedResponse, PaginatedDto } from 'src/PaginatedDto';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
-import * as fsp from 'fs/promises';
-import { join } from 'path';
-import { mkdirs } from 'src/tools/file';
+import { UploadedResult } from './dto/upload-result.dto';
+import { ApiExtraModels } from '@nestjs/swagger';
 
 
 @Controller('photo')
@@ -16,7 +15,17 @@ export class PhotoController {
 
   @Post()
   async create(@Body() createPhotoDto: CreatePhotoDto) {
-    await this.photoService.create(createPhotoDto);
+
+    //拷贝临时文件到真实路径中
+    const path = await this.photoService.moveFileCacheToSource(createPhotoDto)
+
+    const data: Photo = {
+      date: createPhotoDto.date, 
+      type: createPhotoDto.type,
+      src: path
+    }
+    //添加到数据库
+    await this.photoService.create(data!);
   }
 
   @Get()
@@ -46,30 +55,19 @@ export class PhotoController {
   }
 
   @Post("upload")
+  @ApiExtraModels(PaginatedDto, UploadedResult)
+  @ApiPaginatedResponse(UploadedResult, true, HttpStatus.CREATED)
   @UseInterceptors(AnyFilesInterceptor())
-  async uploadFile(@UploadedFiles() files: Array<any>, @Body() body: { lastModifieds: string[] }) {
+  async uploadFile(@UploadedFiles() files: Array<Express.Multer.File>): Promise<Array<UploadedResult>> {
+    const results: Array<UploadedResult> = [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const timestamp = parseInt(body.lastModifieds[i]);
-      const date = new Date(timestamp);
-
-      const baseUrl = join(__dirname, "../../public/upload");
-      const folderName = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
-      const fileName = `${Date.now()}-${file.originalname}`;
-
-      mkdirs(join(baseUrl, folderName));
-      await fsp.writeFile(join(baseUrl, folderName, fileName), file.buffer);
-
-
-      const mimetype = file.mimetype;
-
-      const isVideo = mimetype.startsWith("video/");
-
-      await this.create({
-        date: timestamp + i,
-        src: fileName,
-        type: isVideo ? PhotoType.Video : PhotoType.Image
+      const [fileCacheId, filename] = await this.photoService.saveFileToCache(file);
+      results.push({
+        cacheFileId: fileCacheId,
+        cacheFilename: filename
       })
     }
+    return results
   }
 }

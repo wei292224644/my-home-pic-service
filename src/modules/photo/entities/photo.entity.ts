@@ -3,7 +3,7 @@ export enum PhotoType {
     Video = "Video"
 }
 export class Photo {
-    id: number;
+    id?: number;
     src: string;
     type: PhotoType;
     date: number;

@@ -16,8 +16,11 @@ export type PhotoDocument = HydratedDocument<Photo>;
 )
 
 export class Photo {
-    @Prop()
-    id: number;
+    @Prop({
+        type: mongoose.Schema.Types.Number,
+        index: true,
+    })
+    id?: number;
 
     @Prop({
         type: mongoose.Schema.Types.String,

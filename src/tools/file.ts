@@ -1,15 +1,14 @@
 // 动态新建文件夹的方法
 import * as fs from 'fs'; // 导入 fs 模块
 import * as path from 'path'; // 导入 path 模块
-
-export const mkdirs:any = (pathname:string, callback) => {
+export const mkdirs: any = (pathname: string, callback) => {
   // 需要判断是否是绝对路径（避免不必要的 bug）
   pathname = path.isAbsolute(pathname) ? pathname : path.join(__dirname, pathname);
   // 获取相对路径
   pathname = path.relative(__dirname, pathname);
 
   // path.sep 避免平台差异带来的 bug
-  const folders= pathname.split(path.sep);
+  const folders = pathname.split(path.sep);
 
   let pre = ''; // 最终用来拼合的路径
   folders.forEach(floder => {
@@ -33,3 +32,8 @@ export const mkdirs:any = (pathname:string, callback) => {
     pre = path.join(pre, floder); // 路径拼合
   });
 }
+
+export const getExtName = (pathname: string) => {
+  return path.extname(pathname);
+}
+
