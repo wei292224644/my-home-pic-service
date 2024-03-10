@@ -7,6 +7,8 @@ import { ApiPaginatedResponse, PaginatedDto } from 'src/PaginatedDto';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { UploadedResult } from './dto/upload-result.dto';
 import { ApiExtraModels } from '@nestjs/swagger';
+import { getExtName } from 'src/tools/file';
+import { v4 as uuidv4 } from 'uuid';
 
 
 @Controller('photo')
@@ -16,14 +18,27 @@ export class PhotoController {
   @Post()
   async create(@Body() createPhotoDto: CreatePhotoDto) {
 
-    //拷贝临时文件到真实路径中
-    const path = await this.photoService.moveFileCacheToSource(createPhotoDto)
+    const date = new Date(createPhotoDto.date);
+    date.setHours(0, 0, 0, 0);
+    const ymd = date.getTime();
+    const extName = getExtName(createPhotoDto.filename);
+    const fileCacheId = uuidv4();
+    const filename = fileCacheId + extName;
 
     const data: Photo = {
-      date: createPhotoDto.date, 
+      date: createPhotoDto.date,
       type: createPhotoDto.type,
-      src: path
+      filename: createPhotoDto.filename,
+      src: ymd + "/" + filename
     }
+
+
+    //拷贝临时文件到真实路径中
+    await this.photoService.moveFileCacheToSource(createPhotoDto, ymd + "", filename);
+
+    //获取到年月日的 timestamp
+
+
     //添加到数据库
     await this.photoService.create(data!);
   }

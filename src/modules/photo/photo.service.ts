@@ -5,10 +5,9 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Photo } from './entities/photo.entity';
 import { Model } from 'mongoose';
 import { getExtName, mkdirs } from 'src/tools/file';
-import { nanoid } from 'nanoid';
 
 import { join } from 'path';
-
+import { v4 as uuidv4 } from 'uuid';
 import * as fsp from 'fs/promises';
 import { FILE_BASE_PATH, FILE_CACHE_PATH, FILE_PHTOT_PATH } from 'src/constant';
 
@@ -57,7 +56,7 @@ export class PhotoService {
 
   async saveFileToCache(file: Express.Multer.File) {
     const extName = getExtName(file.originalname);
-    const fileCacheId = nanoid();
+    const fileCacheId = uuidv4();
     const filename = fileCacheId + extName;
     const baseUrl = join(FILE_BASE_PATH, FILE_CACHE_PATH);
     mkdirs(baseUrl);
@@ -65,21 +64,17 @@ export class PhotoService {
     return [fileCacheId, filename];
   }
 
-  async moveFileCacheToSource(createPhotoDto: CreatePhotoDto) {
+  async moveFileCacheToSource(createPhotoDto: CreatePhotoDto, folder: string, filename: string) {
     const baseUrl = join(FILE_BASE_PATH, FILE_CACHE_PATH);
     const cacheFileUrl = join(baseUrl, createPhotoDto.cacheFilename);
     const stat = await fsp.stat(cacheFileUrl)
     if (!stat.isFile()) {
       throw "没有找到缓存的文件";
     }
-    const date = new Date(createPhotoDto.date);
-    const folderName = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
 
-    const toBaseUrl = join(FILE_BASE_PATH, FILE_PHTOT_PATH, folderName);
-    const fileUrl = join(toBaseUrl, createPhotoDto.filename);
-    await mkdirs(toBaseUrl);
-    await fsp.copyFile(cacheFileUrl, fileUrl)
-
-    return fileUrl;
+    // const toBaseUrl = join(FILE_BASE_PATH, FILE_PHTOT_PATH, folderName);
+    // const fileUrl = join(toBaseUrl, createPhotoDto.filename);
+    await mkdirs(join(FILE_BASE_PATH, FILE_PHTOT_PATH, folder));
+    await fsp.copyFile(cacheFileUrl, join(FILE_BASE_PATH, FILE_PHTOT_PATH, folder, filename))
   }
 }

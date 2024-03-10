@@ -27,6 +27,11 @@ export class Photo {
         required: true
     })
     src: string;
+    @Prop({
+        type: mongoose.Schema.Types.String,
+        required: true
+    })
+    filename: string;
 
     @Prop({
         type: mongoose.Schema.Types.String,
