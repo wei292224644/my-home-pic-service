@@ -14,7 +14,9 @@ import { FILE_BASE_PATH, FILE_CACHE_PATH, FILE_PHTOT_PATH } from 'src/constant';
 
 @Injectable()
 export class PhotoService {
-  constructor(@InjectModel(Photo.name) private readonly catModel: Model<Photo>) {
+  constructor(
+    @InjectModel(Photo.name) private readonly catModel: Model<Photo>,
+  ) {
   }
 
   async create(data: Photo) {
@@ -22,9 +24,25 @@ export class PhotoService {
     return createdPhoto;
   }
 
-  async findAll() {
-    return await this.catModel.find();
-    // return (await this.catModel.find()).map(d => new Photo({ id: d.id, name: d.name, age: d.age, breed: d.breed }));
+  async findAll(documentsToSkip = 0, limitOfDocuments?: number, startId?: number) {
+
+    const findQuery = this.catModel.find({ id: { $gt: startId } }).sort({ _id: 1 }).skip(documentsToSkip);
+
+    if (limitOfDocuments) findQuery.limit(limitOfDocuments);
+
+    const results = await findQuery;
+    return results;
+  }
+
+
+  async findOneDay(timestamp: number) {
+    const startTime = timestamp;
+    const endTime = timestamp + (1000 * 60 * 60 * 24);
+
+    const findQuery = this.catModel.find({ date: { $gte: startTime, $lt: endTime } })
+
+    const results = await findQuery;
+    return results;
   }
 
   async findOne(id: number): Promise<Photo> {

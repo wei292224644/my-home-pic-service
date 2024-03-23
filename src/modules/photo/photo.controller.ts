@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, ClassSerializerInterceptor, UploadedFiles, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, ClassSerializerInterceptor, UploadedFiles, HttpStatus, Query } from '@nestjs/common';
 import { PhotoService } from './photo.service';
 import { CreatePhotoDto } from './dto/create-photo.dto';
 import { UpdatePhotoDto } from './dto/update-photo.dto';
@@ -9,6 +9,7 @@ import { UploadedResult } from './dto/upload-result.dto';
 import { ApiExtraModels } from '@nestjs/swagger';
 import { getExtName } from 'src/tools/file';
 import { v4 as uuidv4 } from 'uuid';
+import { PaginationParams } from './dto/paginationParams.dto';
 
 
 @Controller('photo')
@@ -38,15 +39,21 @@ export class PhotoController {
 
     //获取到年月日的 timestamp
 
-
     //添加到数据库
     await this.photoService.create(data!);
   }
 
   @Get()
   @ApiPaginatedResponse(Photo, true)
-  async findAll() {
-    return await this.photoService.findAll();
+  async findAll(@Query() { skip, limit, startId }: PaginationParams) {
+    return await this.photoService.findAll(skip, limit, startId);
+  }
+
+
+  @Get("findOneDay")
+  @ApiPaginatedResponse(Photo, true)
+  async findOneDay(@Query('timestamp') timestamp: number) {
+    return await this.photoService.findOneDay(timestamp);
   }
 
   @Get(':id')
